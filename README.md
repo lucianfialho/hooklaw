@@ -1,8 +1,9 @@
 <p align="center">
-  <h1 align="center">HookLaw</h1>
-  <p align="center"><strong>Webhook orchestrator with AI agents and native MCP tools.</strong></p>
-  <p align="center">Webhooks in. MCP tools out. AI agent in the middle.</p>
+  <img src="logo.png" alt="HookLaw" width="200" />
 </p>
+<h1 align="center">HookLaw</h1>
+<p align="center"><strong>Webhook orchestrator with AI agents and native MCP tools.</strong></p>
+<p align="center">Webhooks in. MCP tools out. AI agent in the middle.</p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/license-MIT-blue?style=for-the-badge" alt="License" />
