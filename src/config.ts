@@ -30,8 +30,8 @@ function substituteEnvVars(value: unknown): unknown {
   return value;
 }
 
-function loadDotenv(dir: string): void {
-  const envPath = resolve(dir, '.env');
+function loadDotenv(dir: string, filename: string = '.env'): void {
+  const envPath = resolve(dir, filename);
   if (!existsSync(envPath)) return;
 
   const content = readFileSync(envPath, 'utf-8');
@@ -56,8 +56,9 @@ export function loadConfig(configPath?: string): AppConfig {
   const filePath = configPath ?? resolve(process.cwd(), 'hooklaw.config.yaml');
   const dir = resolve(filePath, '..');
 
-  // Load .env before parsing config
-  loadDotenv(dir);
+  // Load env files (.env.local takes priority over .env)
+  loadDotenv(dir, '.env');
+  loadDotenv(dir, '.env.local');
 
   if (!existsSync(filePath)) {
     // Return defaults if no config file
