@@ -1,6 +1,6 @@
 {
   "name": "@hooklaw/provider-anthropic",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Anthropic provider for HookLaw",
   "type": "module",
   "main": "dist/index.js",
