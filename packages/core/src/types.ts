@@ -17,7 +17,7 @@ export type McpServerConfig = z.infer<typeof McpServerConfigSchema>;
 export const AgentConfigSchema = z.object({
   provider: z.string(),
   model: z.string(),
-  temperature: z.number().min(0).max(2).default(0.7),
+  temperature: z.number().min(0).max(2).optional(),
   instructions: z.string(),
   max_tokens: z.number().positive().optional(),
 });

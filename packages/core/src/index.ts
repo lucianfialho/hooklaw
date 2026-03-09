@@ -74,8 +74,18 @@ export async function bootstrap(opts: BootstrapOptions = {}): Promise<{ server: 
   return { server, config };
 }
 
+// Core modules
 export { loadConfig } from './config.js';
 export { createServer, startServer } from './server.js';
 export { processWebhook } from './router.js';
 export { HookQueue } from './queue.js';
 export { initDb } from './db.js';
+
+// Provider registry
+export { registerProvider, createProvider, clearProviderCache, clearProviderRegistry, getRegisteredProviders } from './providers/index.js';
+export type { ProviderFactory } from './providers/index.js';
+export type { LLMProvider, Message, ChatOptions, ChatResult, ToolDefinition, ToolCall } from './providers/base.js';
+
+// Types
+export type { AppConfig, ProviderConfig, RecipeConfig, McpServerConfig, AgentConfig, ServerConfig, LogsConfig, Execution, ExecutionStatus } from './types.js';
+export { AppConfigSchema, RecipeConfigSchema, McpServerConfigSchema, ProviderConfigSchema, ServerConfigSchema, LogsConfigSchema, AgentConfigSchema } from './types.js';

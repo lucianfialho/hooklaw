@@ -1,0 +1,36 @@
+{
+  "name": "@hooklaw/provider-anthropic",
+  "version": "0.1.0",
+  "description": "Anthropic provider for HookLaw",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc --noEmit"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0"
+  },
+  "peerDependencies": {
+    "@hooklaw/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@hooklaw/core": "workspace:*",
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  }
+}

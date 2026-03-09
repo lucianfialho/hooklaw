@@ -1,6 +1,10 @@
 #!/usr/bin/env node
+
+// Side-effect imports: register all built-in providers
+import '@hooklaw/provider-openai';
+import '@hooklaw/provider-anthropic';
+
 import { Command } from 'commander';
-import { bootstrap } from './index.js';
 
 const program = new Command();
 
@@ -13,8 +17,13 @@ program
   .command('start')
   .description('Start the HookLaw server')
   .option('-c, --config <path>', 'Path to config file', 'hooklaw.config.yaml')
+  .option('-v, --verbose', 'Enable verbose/debug logging')
   .action(async (opts) => {
     try {
+      if (opts.verbose) {
+        process.env.LOG_LEVEL = 'debug';
+      }
+      const { bootstrap } = await import('@hooklaw/core');
       await bootstrap({ configPath: opts.config });
     } catch (err) {
       console.error('Failed to start HookLaw:', err instanceof Error ? err.message : err);
@@ -63,7 +72,6 @@ recipes:
     agent:
       provider: anthropic
       model: claude-sonnet-4-20250514
-      temperature: 0.3
       instructions: |
         You process incoming webhook payloads.
         Analyze the data and take appropriate action.

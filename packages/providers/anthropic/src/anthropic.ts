@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import type { LLMProvider, Message, ChatOptions, ChatResult, ToolDefinition, ToolCall } from './base.js';
+import type { LLMProvider, Message, ChatOptions, ChatResult, ToolDefinition, ToolCall } from '@hooklaw/core';
 
 export class AnthropicProvider implements LLMProvider {
   private client: Anthropic;

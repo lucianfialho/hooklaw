@@ -2,13 +2,9 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { processWebhook, getRecipesForSlug } from './router.js';
 import { initDb, getExecutionsByHook, getExecutionsByRecipe } from './db.js';
 import { HookQueue } from './queue.js';
-import { clearProviderCache } from './providers/index.js';
+import { registerProvider, clearProviderCache, clearProviderRegistry } from './providers/index.js';
 import type { AppConfig } from './types.js';
 import type Database from 'better-sqlite3';
-
-// Mock provider at module level
-import * as providerModule from './providers/index.js';
-import { vi } from 'vitest';
 
 let db: Database.Database;
 let queue: HookQueue;
@@ -66,13 +62,13 @@ const baseConfig: AppConfig = {
 beforeEach(() => {
   db = initDb(':memory:');
   queue = new HookQueue();
-  clearProviderCache();
+  clearProviderRegistry();
 
-  vi.spyOn(providerModule, 'createProvider').mockReturnValue({
+  registerProvider('mock', () => ({
     async chat() {
       return { content: 'Mock agent response' };
     },
-  });
+  }));
 });
 
 describe('getRecipesForSlug', () => {
@@ -118,9 +114,10 @@ describe('processWebhook', () => {
   });
 
   it('records error when provider fails', async () => {
-    vi.spyOn(providerModule, 'createProvider').mockReturnValue({
+    clearProviderRegistry();
+    registerProvider('mock', () => ({
       async chat() { throw new Error('API rate limit'); },
-    });
+    }));
 
     const result = await processWebhook('stripe-payment', {}, { config: baseConfig, db, queue });
     expect(result).toContain('Error: API rate limit');

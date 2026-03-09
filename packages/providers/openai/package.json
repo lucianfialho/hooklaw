@@ -1,0 +1,36 @@
+{
+  "name": "@hooklaw/provider-openai",
+  "version": "0.1.0",
+  "description": "OpenAI, OpenRouter, and Ollama providers for HookLaw",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc --noEmit"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "openai": "^4.85.0"
+  },
+  "peerDependencies": {
+    "@hooklaw/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@hooklaw/core": "workspace:*",
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  }
+}

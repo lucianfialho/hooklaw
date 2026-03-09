@@ -74,6 +74,7 @@ async function executeRecipe(
   });
 
   logger.info({ slug, recipeId, executionId: exec.id }, 'Processing recipe');
+  logger.debug({ recipe: { provider: recipe.agent.provider, model: recipe.agent.model, temperature: recipe.agent.temperature, tools: recipe.tools } }, 'Recipe config');
 
   // Update to running
   updateExecution(db, exec.id, { status: 'running' });
@@ -85,17 +86,26 @@ async function executeRecipe(
     const providerName = recipe.agent.provider;
     const providerConfig = config.providers[providerName] ?? {};
     const provider = createProvider(providerName, providerConfig);
+    logger.debug({ provider: providerName }, 'Provider created');
 
     // Connect MCP servers referenced by recipe tools
     if (recipe.tools.length > 0) {
+      logger.debug({ tools: recipe.tools }, 'Connecting MCP servers');
       mcpPool = new McpPool();
       await mcpPool.connect(config.mcp_servers, recipe.tools);
+      logger.debug('MCP servers connected');
     }
 
     const tools = mcpPool?.getAllTools();
     const onToolCall = mcpPool
-      ? (name: string, args: Record<string, unknown>) => mcpPool!.callTool(name, args)
+      ? (name: string, args: Record<string, unknown>) => {
+          logger.debug({ tool: name, args }, 'Calling MCP tool');
+          return mcpPool!.callTool(name, args);
+        }
       : undefined;
+
+    logger.debug({ toolCount: tools?.length ?? 0, model: recipe.agent.model }, 'Executing agent');
+    logger.debug({ instructions: recipe.agent.instructions.slice(0, 200), payload }, 'Agent input');
 
     // Execute agent
     const result = await executeAgent({
@@ -108,6 +118,8 @@ async function executeRecipe(
       tools,
       onToolCall,
     });
+
+    logger.debug({ output: result.output, toolsCalled: result.tools_called, duration: result.duration_ms }, 'Agent result');
 
     // Update execution with success
     updateExecution(db, exec.id, {

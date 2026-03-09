@@ -1,0 +1,49 @@
+{
+  "name": "hooklaw",
+  "version": "0.1.0",
+  "description": "Webhook orchestrator with AI agents and MCP tools. BYOK, self-hosted.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "hooklaw": "./node_modules/@hooklaw/cli/dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "keywords": [
+    "webhook",
+    "ai",
+    "agent",
+    "mcp",
+    "automation",
+    "byok"
+  ],
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hooklaw/hooklaw.git"
+  },
+  "dependencies": {
+    "@hooklaw/core": "workspace:*",
+    "@hooklaw/cli": "workspace:*",
+    "@hooklaw/provider-openai": "workspace:*",
+    "@hooklaw/provider-anthropic": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  }
+}

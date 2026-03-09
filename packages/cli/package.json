@@ -1,0 +1,31 @@
+{
+  "name": "@hooklaw/cli",
+  "version": "0.1.0",
+  "description": "CLI for HookLaw — webhook orchestrator with AI agents and MCP tools",
+  "type": "module",
+  "main": "dist/cli.js",
+  "bin": {
+    "hooklaw": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc --noEmit"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@hooklaw/core": "workspace:*",
+    "@hooklaw/provider-openai": "workspace:*",
+    "@hooklaw/provider-anthropic": "workspace:*",
+    "commander": "^13.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  }
+}
