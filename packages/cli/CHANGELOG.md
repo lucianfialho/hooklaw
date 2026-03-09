@@ -1,5 +1,13 @@
 # @lucianfialho/hooklaw-cli
 
+## 2.0.1
+
+### Patch Changes
+
+- @lucianfialho/hooklaw-core@2.0.1
+- @lucianfialho/hooklaw-provider-openai@2.0.1
+- @lucianfialho/hooklaw-provider-anthropic@2.0.1
+
 ## 2.0.0
 
 ### Minor Changes
