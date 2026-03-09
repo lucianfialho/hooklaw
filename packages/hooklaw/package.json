@@ -12,7 +12,7 @@
     }
   },
   "bin": {
-    "hooklaw": "./node_modules/@lucianfialho/hooklaw-cli/dist/cli.js"
+    "hooklaw": "dist/cli.js"
   },
   "scripts": {
     "build": "tsc -b"
