@@ -4,10 +4,16 @@ import { Sidebar } from './Sidebar.tsx';
 
 export function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   return (
     <div className="flex h-screen">
-      <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar
+        open={sidebarOpen}
+        collapsed={collapsed}
+        onClose={() => setSidebarOpen(false)}
+        onToggleCollapse={() => setCollapsed((c) => !c)}
+      />
       <div className="flex-1 flex flex-col min-w-0">
         {/* Mobile header */}
         <header className="md:hidden flex items-center gap-3 p-3 border-b border-zinc-800 bg-zinc-900">

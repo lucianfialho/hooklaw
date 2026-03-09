@@ -1,6 +1,7 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
+import { execSync, spawn } from 'node:child_process';
 import { createLogger } from './logger.js';
 import type { McpServerConfig } from './types.js';
 import type { ToolDefinition } from './providers/base.js';
@@ -63,6 +64,162 @@ export async function connectMcpServer(name: string, config: McpServerConfig): P
   }
 
   return { name, client, tools, callTool, close };
+}
+
+// ── Health Check ─────────────────────────────────────────
+
+export type McpHealthStatus = 'connected' | 'error' | 'not_installed' | 'checking';
+
+export interface McpToolInfo {
+  name: string;
+  description: string;
+}
+
+export interface McpHealthResult {
+  name: string;
+  status: McpHealthStatus;
+  tools?: McpToolInfo[];
+  error?: string;
+  packageName?: string;
+}
+
+/**
+ * Extract npm package name from an MCP server config.
+ * Handles commands like "npx @stripe/mcp", "npx -y @modelcontextprotocol/server-github", etc.
+ */
+export function extractPackageName(config: McpServerConfig): string | undefined {
+  if (config.transport !== 'stdio') return undefined;
+
+  // Check args for npx patterns
+  if (config.command === 'npx' || config.command === 'npx.cmd') {
+    const args = config.args ?? [];
+    for (const arg of args) {
+      // Skip flags like -y, --yes, -p, etc.
+      if (arg.startsWith('-')) continue;
+      // First non-flag arg is the package
+      return arg;
+    }
+  }
+
+  // Check if command itself is a known npm package pattern
+  if (config.command?.startsWith('@') || config.command?.includes('/')) {
+    return config.command;
+  }
+
+  return undefined;
+}
+
+/**
+ * Check if an npm package is installed (globally or locally).
+ */
+function isPackageInstalled(packageName: string): boolean {
+  try {
+    // Check local node_modules
+    execSync(`npm ls ${packageName} --depth=0 2>/dev/null`, { stdio: 'pipe' });
+    return true;
+  } catch {
+    // Not local, check global
+    try {
+      execSync(`npm ls -g ${packageName} --depth=0 2>/dev/null`, { stdio: 'pipe' });
+      return true;
+    } catch {
+      // Check npx cache
+      try {
+        execSync(`npx --no-install ${packageName} --version 2>/dev/null`, { stdio: 'pipe', timeout: 5000 });
+        return true;
+      } catch {
+        return false;
+      }
+    }
+  }
+}
+
+/**
+ * Try to connect to an MCP server and verify it responds.
+ * Disconnects immediately after health check.
+ */
+export async function checkMcpHealth(name: string, config: McpServerConfig, timeoutMs = 15000): Promise<McpHealthResult> {
+  const packageName = extractPackageName(config);
+
+  // For stdio servers, first check if command is available
+  if (config.transport === 'stdio' && packageName) {
+    if (!isPackageInstalled(packageName)) {
+      return { name, status: 'not_installed', packageName, error: `Package ${packageName} not found` };
+    }
+  }
+
+  try {
+    const client = new Client({ name: 'hooklaw-health', version: '0.1.0' }, { capabilities: {} });
+    let transport: StdioClientTransport | SSEClientTransport;
+
+    if (config.transport === 'stdio') {
+      if (!config.command) return { name, status: 'error', error: 'No command configured' };
+      transport = new StdioClientTransport({
+        command: config.command,
+        args: config.args ?? [],
+        env: { ...process.env, ...config.env } as Record<string, string>,
+      });
+    } else {
+      if (!config.url) return { name, status: 'error', error: 'No URL configured' };
+      transport = new SSEClientTransport(new URL(config.url));
+    }
+
+    // Connect with timeout
+    const connectPromise = client.connect(transport);
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Connection timeout')), timeoutMs),
+    );
+
+    await Promise.race([connectPromise, timeoutPromise]);
+
+    // List tools to verify full functionality
+    const toolsResult = await client.listTools();
+    const toolInfos: McpToolInfo[] = (toolsResult.tools ?? []).map((t) => ({
+      name: t.name,
+      description: t.description ?? '',
+    }));
+
+    // Disconnect immediately
+    try { await client.close(); } catch { /* ignore */ }
+
+    logger.info({ name, toolCount: toolInfos.length }, 'MCP health check passed');
+    return { name, status: 'connected', tools: toolInfos, packageName };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    logger.warn({ name, err: message }, 'MCP health check failed');
+    return { name, status: 'error', error: message, packageName };
+  }
+}
+
+/**
+ * Install an npm package for an MCP server.
+ */
+export async function installMcpPackage(packageName: string): Promise<{ success: boolean; output: string }> {
+  return new Promise((resolve) => {
+    logger.info({ packageName }, 'Installing MCP package');
+    const child = spawn('npm', ['install', '-g', packageName], {
+      stdio: 'pipe',
+      shell: true,
+    });
+
+    let output = '';
+    child.stdout?.on('data', (data: Buffer) => { output += data.toString(); });
+    child.stderr?.on('data', (data: Buffer) => { output += data.toString(); });
+
+    child.on('close', (code) => {
+      if (code === 0) {
+        logger.info({ packageName }, 'MCP package installed successfully');
+        resolve({ success: true, output });
+      } else {
+        logger.error({ packageName, code, output }, 'MCP package install failed');
+        resolve({ success: false, output });
+      }
+    });
+
+    child.on('error', (err) => {
+      resolve({ success: false, output: err.message });
+    });
+  });
 }
 
 export class McpPool {

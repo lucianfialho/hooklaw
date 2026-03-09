@@ -11,13 +11,16 @@ export interface ServerDeps {
   getSlugConfig: (slug: string) => { enabled: boolean; mode: string } | undefined;
   processWebhook: (slug: string, payload: unknown) => Promise<string | void>;
   listRecipes?: () => Array<{ id: string; slug: string; description: string; enabled: boolean; mode: string; tools: string[]; provider?: string; model?: string; instructions?: string }>;
-  getMcpServers?: () => Array<{ name: string; transport: string; command?: string; args?: string[] }>;
+  getMcpServers?: () => Array<{ name: string; transport: string; command?: string; args?: string[]; packageName?: string }>;
   updateRecipe?: (recipeId: string, update: Record<string, unknown>) => void;
   getExecutions?: (slug: string, limit: number, offset: number) => unknown[];
   getRecipeExecutions?: (recipeId: string, limit: number, offset: number) => unknown[];
   getAllExecutions?: (opts: { limit?: number; offset?: number; status?: string; slug?: string; recipeId?: string }) => { executions: unknown[]; total: number };
   getStats?: () => { total: number; success: number; error: number; running: number; pending: number };
   getConfig?: () => unknown;
+  checkMcpHealth?: (name: string, force?: boolean) => Promise<{ name: string; status: string; tools?: Array<{ name: string; description: string }>; error?: string; packageName?: string }>;
+  checkAllMcpHealth?: () => Promise<Array<{ name: string; status: string; tools?: Array<{ name: string; description: string }>; error?: string; packageName?: string }>>;
+  installMcpPackage?: (name: string) => Promise<{ success: boolean; output: string }>;
   dashboardDir?: string;
   setupMode?: boolean;
   onSetup?: (data: unknown) => Promise<void>;
@@ -243,6 +246,41 @@ export function createServer(deps: ServerDeps): http.Server {
           return sendJson(res, 200, { servers: deps.getMcpServers() });
         }
         return sendJson(res, 200, { servers: [] });
+      }
+
+      // GET /api/mcp-servers/health — check all MCP servers health
+      if (method === 'GET' && segments[0] === 'api' && segments[1] === 'mcp-servers' && segments[2] === 'health' && !segments[3]) {
+        if (deps.checkAllMcpHealth) {
+          const results = await deps.checkAllMcpHealth();
+          return sendJson(res, 200, { servers: results });
+        }
+        return sendJson(res, 501, { error: 'Health check not available' });
+      }
+
+      // POST /api/mcp-servers/:name/check — check a single MCP server
+      if (method === 'POST' && segments[0] === 'api' && segments[1] === 'mcp-servers' && segments[2] && segments[3] === 'check' && !segments[4]) {
+        if (deps.checkMcpHealth) {
+          try {
+            const result = await deps.checkMcpHealth(segments[2], true);
+            return sendJson(res, 200, result);
+          } catch (err) {
+            return sendJson(res, 400, { error: err instanceof Error ? err.message : 'Check failed' });
+          }
+        }
+        return sendJson(res, 501, { error: 'Health check not available' });
+      }
+
+      // POST /api/mcp-servers/:name/install — install MCP package
+      if (method === 'POST' && segments[0] === 'api' && segments[1] === 'mcp-servers' && segments[2] && segments[3] === 'install' && !segments[4]) {
+        if (deps.installMcpPackage) {
+          try {
+            const result = await deps.installMcpPackage(segments[2]);
+            return sendJson(res, result.success ? 200 : 500, result);
+          } catch (err) {
+            return sendJson(res, 400, { error: err instanceof Error ? err.message : 'Install failed' });
+          }
+        }
+        return sendJson(res, 501, { error: 'Install not available' });
       }
 
       // Dashboard static files — /dashboard/*

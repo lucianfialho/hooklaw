@@ -25,6 +25,20 @@ export interface McpServer {
   transport: string;
   command?: string;
   args?: string[];
+  packageName?: string;
+}
+
+export interface McpToolInfo {
+  name: string;
+  description: string;
+}
+
+export interface McpHealthResult {
+  name: string;
+  status: 'connected' | 'error' | 'not_installed' | 'checking';
+  tools?: McpToolInfo[];
+  error?: string;
+  packageName?: string;
 }
 
 export interface Execution {
@@ -58,6 +72,9 @@ export const api = {
   updateRecipe: (id: string, update: Partial<Pick<Recipe, 'description' | 'slug' | 'mode' | 'tools' | 'provider' | 'model' | 'instructions'>>) =>
     fetchApi<{ status: string }>(`/recipes/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(update) }),
   getConfig: () => fetchApi<unknown>('/config'),
+  checkAllMcpHealth: () => fetchApi<{ servers: McpHealthResult[] }>('/mcp-servers/health'),
+  checkMcpHealth: (name: string) => fetchApi<McpHealthResult>(`/mcp-servers/${name}/check`, { method: 'POST' }),
+  installMcpPackage: (name: string) => fetchApi<{ success: boolean; output: string }>(`/mcp-servers/${name}/install`, { method: 'POST' }),
   getHealth: () => fetch('/health').then(r => { if (!r.ok) throw new Error('offline'); return r.json(); }) as Promise<{ status: string }>,
   sendWebhook: (slug: string, payload: unknown) =>
     fetch(`/h/${slug}`, {

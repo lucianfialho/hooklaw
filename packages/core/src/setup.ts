@@ -1,5 +1,6 @@
 import { writeFileSync, existsSync, readFileSync } from 'node:fs';
 import { createServer, startServer, getLocalIP } from './server.js';
+import { installMcpPackage, extractPackageName } from './mcp.js';
 import { createLogger } from './logger.js';
 
 const logger = createLogger('hooklaw:setup');
@@ -119,6 +120,28 @@ export async function startSetupServer(opts: SetupServerOptions): Promise<void> 
           writeFileSync('.env', envLine);
         }
         logger.info('API key saved to .env');
+      }
+
+      // Install MCP package if needed
+      if (data.mcp) {
+        const packageName = extractPackageName({
+          transport: 'stdio',
+          command: data.mcp.config.command,
+          args: data.mcp.config.args,
+        });
+        if (packageName) {
+          logger.info({ packageName }, 'Installing MCP package...');
+          try {
+            const result = await installMcpPackage(packageName);
+            if (result.success) {
+              logger.info({ packageName }, 'MCP package installed');
+            } else {
+              logger.warn({ packageName, output: result.output }, 'MCP package install failed — you may need to install it manually');
+            }
+          } catch (err) {
+            logger.warn({ packageName, err }, 'MCP package install failed');
+          }
+        }
       }
 
       // Close setup server and signal to restart

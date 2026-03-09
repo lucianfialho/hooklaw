@@ -97,6 +97,9 @@ importers:
 
   packages/dashboard:
     dependencies:
+      '@visual-yaml/react':
+        specifier: ^0.2.0
+        version: 0.2.0(react@19.2.4)
       '@xyflow/react':
         specifier: ^12.10.1
         version: 12.10.1(@types/react@19.2.14)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -1004,6 +1007,14 @@ packages:
 
   '@types/react@19.2.14':
     resolution: {integrity: sha512-ilcTH/UniCkMdtexkoCN0bI7pMcJDvmQFPvuPvmEaYA/NSfFTAgdUSLAoVjaRJm7+6PvcM+q1zYOwS4wTYMF9w==}
+
+  '@visual-yaml/core@0.2.0':
+    resolution: {integrity: sha512-+yoSQVDBZaNsKSt1oD61rFoQs72Eq4/yapxZnx0t6gDxeg0cKNPEV2A/HvoDbowI4y9WWDz4UnIT1tDFk1gZcw==}
+
+  '@visual-yaml/react@0.2.0':
+    resolution: {integrity: sha512-kNBPOs9HSd9eSu66PidRimPs7h7H2WLVCLmHWL2CVrmxoiAye9Jo1rfjZEgutlYZpMpPl09jLMqzJMKXz0oefw==}
+    peerDependencies:
+      react: ^18.0.0 || ^19.0.0
 
   '@vitejs/plugin-react@4.7.0':
     resolution: {integrity: sha512-gUu9hwfWvvEDBBmgtAowQCojwZmJ5mcLn3aufeCsitijs3+f2NsrPtlAWIR6OPiqljl96GVCUbLe0HyqIpVaoA==}
@@ -3267,6 +3278,15 @@ snapshots:
   '@types/react@19.2.14':
     dependencies:
       csstype: 3.2.3
+
+  '@visual-yaml/core@0.2.0':
+    dependencies:
+      yaml: 2.8.2
+
+  '@visual-yaml/react@0.2.0(react@19.2.4)':
+    dependencies:
+      '@visual-yaml/core': 0.2.0
+      react: 19.2.4
 
   '@vitejs/plugin-react@4.7.0(vite@6.4.1(@types/node@22.19.15)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)(yaml@2.8.2))':
     dependencies:
