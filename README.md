@@ -15,7 +15,9 @@
 ---
 
 <p align="center">
-  <img src="onboarding.mp4" alt="HookLaw Onboarding Demo" width="700" />
+  <video src="https://github.com/lucianfialho/hooklaw/raw/main/onboarding.mp4" width="700" autoplay loop muted>
+    <a href="https://github.com/lucianfialho/hooklaw/raw/main/onboarding.mp4">Watch the onboarding demo</a>
+  </video>
 </p>
 
 ```
