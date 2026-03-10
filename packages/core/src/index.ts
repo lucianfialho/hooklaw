@@ -1,6 +1,6 @@
 import { createLogger } from './logger.js';
 import { loadConfig, updateRecipeInFile, addRecipeToFile, addMcpServerToFile, type RecipeUpdate, type NewRecipe, type NewMcpServer } from './config.js';
-import { initDb, getExecutionsByHook, getExecutionsByRecipe, getAllExecutions, getExecutionStats, cleanOldExecutions } from './db.js';
+import { initDb, getExecutionsByHook, getExecutionsByRecipe, getAllExecutions, getExecutionStats, cleanOldExecutions, getTracesByExecution, getMemory, clearMemory, cleanOldMemory, getChildExecutions, getPendingApprovals, updateExecution } from './db.js';
 import { HookQueue } from './queue.js';
 import { createServer, startServer, getLocalIP } from './server.js';
 import { processWebhook, getRecipesForSlug } from './router.js';
@@ -178,6 +178,31 @@ export async function bootstrap(opts: BootstrapOptions = {}): Promise<{ server: 
     listFeeds() {
       return feedManager?.getStatus() ?? [];
     },
+    // Observability
+    getExecutionTraces(executionId: string) {
+      return getTracesByExecution(db, executionId);
+    },
+    // Memory
+    getRecipeMemory(recipeId: string, limit?: number) {
+      return getMemory(db, recipeId, limit);
+    },
+    clearRecipeMemory(recipeId: string) {
+      clearMemory(db, recipeId);
+    },
+    // Chains
+    getChildExecutions(parentId: string) {
+      return getChildExecutions(db, parentId);
+    },
+    // Approvals
+    getPendingApprovals() {
+      return getPendingApprovals(db);
+    },
+    approveExecution(id: string, approved: boolean, _notes?: string) {
+      updateExecution(db, id, {
+        status: approved ? 'approved' : 'rejected',
+        approval_status: approved ? 'approved' : 'rejected',
+      });
+    },
     dashboardDir: opts.dashboardDir,
   });
 
@@ -218,6 +243,11 @@ export async function bootstrap(opts: BootstrapOptions = {}): Promise<{ server: 
     if (deleted > 0) {
       logger.info({ deleted, retentionDays: config.logs.retention_days }, 'Cleaned old executions');
     }
+    // Clean old agent memory (default 168h = 7 days)
+    const memDeleted = cleanOldMemory(db, 168);
+    if (memDeleted > 0) {
+      logger.info({ deleted: memDeleted }, 'Cleaned old agent memory');
+    }
   }, 6 * 60 * 60 * 1000);
   retentionInterval.unref();
 
@@ -247,5 +277,5 @@ export { startFeeds } from './feeds.js';
 export type { FeedManager, FeedStatus, FeedsDeps } from './feeds.js';
 
 // Types
-export type { AppConfig, ProviderConfig, RecipeConfig, McpServerConfig, AgentConfig, ServerConfig, LogsConfig, FeedSourceConfig, Execution, ExecutionStatus } from './types.js';
+export type { AppConfig, ProviderConfig, RecipeConfig, McpServerConfig, AgentConfig, ServerConfig, LogsConfig, FeedSourceConfig, Execution, ExecutionStatus, AgentTrace, AgentMemoryEntry } from './types.js';
 export { AppConfigSchema, RecipeConfigSchema, McpServerConfigSchema, ProviderConfigSchema, ServerConfigSchema, LogsConfigSchema, AgentConfigSchema, FeedSourceConfigSchema } from './types.js';

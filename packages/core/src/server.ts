@@ -24,6 +24,16 @@ export interface ServerDeps {
   installMcpPackage?: (name: string) => Promise<{ success: boolean; output: string }>;
   addMcpServer?: (data: unknown) => void;
   listFeeds?: () => Array<{ id: string; url: string; slug: string; refresh: number; enabled: boolean }>;
+  // Observability
+  getExecutionTraces?: (executionId: string) => unknown[];
+  // Memory
+  getRecipeMemory?: (recipeId: string, limit?: number) => unknown[];
+  clearRecipeMemory?: (recipeId: string) => void;
+  // Chains
+  getChildExecutions?: (parentId: string) => unknown[];
+  // Approvals
+  getPendingApprovals?: () => unknown[];
+  approveExecution?: (id: string, approved: boolean, notes?: string) => void;
   dashboardDir?: string;
   setupMode?: boolean;
   onSetup?: (data: unknown) => Promise<void>;
@@ -324,6 +334,62 @@ export function createServer(deps: ServerDeps): http.Server {
           }
         }
         return sendJson(res, 501, { error: 'Install not available' });
+      }
+
+      // GET /api/executions/:id/traces — agent reasoning traces
+      if (method === 'GET' && segments[0] === 'api' && segments[1] === 'executions' && segments[2] && segments[3] === 'traces' && !segments[4]) {
+        if (deps.getExecutionTraces) {
+          return sendJson(res, 200, { traces: deps.getExecutionTraces(segments[2]) });
+        }
+        return sendJson(res, 200, { traces: [] });
+      }
+
+      // GET /api/executions/:id/chain — child executions in a chain
+      if (method === 'GET' && segments[0] === 'api' && segments[1] === 'executions' && segments[2] && segments[3] === 'chain' && !segments[4]) {
+        if (deps.getChildExecutions) {
+          return sendJson(res, 200, { executions: deps.getChildExecutions(segments[2]) });
+        }
+        return sendJson(res, 200, { executions: [] });
+      }
+
+      // GET /api/recipes/:id/memory — agent memory for a recipe
+      if (method === 'GET' && segments[0] === 'api' && segments[1] === 'recipes' && segments[2] && segments[3] === 'memory' && !segments[4]) {
+        if (deps.getRecipeMemory) {
+          const limit = parseInt(query.limit ?? '20', 10) || 20;
+          return sendJson(res, 200, { memory: deps.getRecipeMemory(segments[2], limit) });
+        }
+        return sendJson(res, 200, { memory: [] });
+      }
+
+      // DELETE /api/recipes/:id/memory — clear agent memory for a recipe
+      if (method === 'DELETE' && segments[0] === 'api' && segments[1] === 'recipes' && segments[2] && segments[3] === 'memory' && !segments[4]) {
+        if (deps.clearRecipeMemory) {
+          deps.clearRecipeMemory(segments[2]);
+          return sendJson(res, 200, { status: 'ok' });
+        }
+        return sendJson(res, 501, { error: 'Memory clear not available' });
+      }
+
+      // GET /api/approvals — list pending approvals
+      if (method === 'GET' && segments[0] === 'api' && segments[1] === 'approvals' && !segments[2]) {
+        if (deps.getPendingApprovals) {
+          return sendJson(res, 200, { approvals: deps.getPendingApprovals() });
+        }
+        return sendJson(res, 200, { approvals: [] });
+      }
+
+      // POST /api/executions/:id/approve — approve or reject an execution
+      if (method === 'POST' && segments[0] === 'api' && segments[1] === 'executions' && segments[2] && segments[3] === 'approve' && !segments[4]) {
+        if (deps.approveExecution) {
+          try {
+            const body = await parseBody(req) as { approved: boolean; notes?: string };
+            deps.approveExecution(segments[2], body.approved, body.notes);
+            return sendJson(res, 200, { status: 'ok' });
+          } catch (err) {
+            return sendJson(res, 400, { error: err instanceof Error ? err.message : 'Approval failed' });
+          }
+        }
+        return sendJson(res, 501, { error: 'Approval not available' });
       }
 
       // Dashboard static files — /dashboard/*

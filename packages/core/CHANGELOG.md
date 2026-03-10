@@ -1,5 +1,11 @@
 # @lucianfialho/hooklaw-core
 
+## 3.0.0
+
+### Minor Changes
+
+- feat: add 5 differentiating features — multi-agent chains, human-in-the-loop approvals, agent memory, conditional routing, and agent observability traces
+
 ## 2.0.1
 
 ## 2.0.0
